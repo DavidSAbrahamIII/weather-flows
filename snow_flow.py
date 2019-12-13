@@ -45,5 +45,5 @@ notification = SlackTask(
 
 with Flow("Snow Flow") as flow:
     forecast = pull_forecast(city=city, api_key=api_key)
-    rain = is_snowing_this_week(forecast)
-    notification.set_upstream(rain)
+    snow = is_snowing_this_week(forecast)
+    notification.set_upstream(snow)
