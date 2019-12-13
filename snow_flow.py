@@ -7,7 +7,7 @@ from prefect.tasks.notifications.slack_task import SlackTask
 from prefect.tasks.secrets import Secret
 
 
-city = Parameter(name="City", default="San Jose")
+city = Parameter(name="City", default="Alpine Meadows")
 api_key = Secret("WEATHER_API_KEY")
 
 
@@ -25,29 +25,25 @@ def pull_forecast(city, api_key):
 
 
 @task
-def is_raining_tomorrow(data):
+def is_snowing_this_week(data):
     """
     Given a list of hourly forecasts, returns a boolean specifying
-    whether there is rain in tomorrow's forecast.
+    whether there is snow in this week's forecast.
     """
-    pendulum.now("utc").add(days=1).strftime("%Y-%m-%d")
-    rain = [
-        w
-        for forecast in data["list"]
-        for w in forecast["weather"]
-        if w["main"] == "Rain" and forecast["dt_txt"].startswith(tomorrow)
+    snow = [
+        forecast["snow"].get("3h", 0) for forecast in data["list"] if "snow" in forecast
     ]
-    if not bool(rain):
-        raise SKIP("There is no rain in the forecast for tomorrow.")
+    if not sum([s >= 1 for s in snow]) >= 8:
+        raise SKIP("There is not much snow in the forecast.")
 
 
 notification = SlackTask(
-    message="There is rain in the forecast for tomorrow - better take your umbrella out!",
+    message="There is snow in the forecast for this week - it might be time to hit the slopes!",
     webhook_secret="DAVID_SLACK_URL",
 )
 
 
-with Flow("Umbrella Flow") as flow:
+with Flow("Snow Flow") as flow:
     forecast = pull_forecast(city=city, api_key=api_key)
-    rain = is_raining_tomorrow(forecast)
-    notification.set_upstream(rain)
+    snow = is_snowing_this_week(forecast)
+    notification.set_upstream(snow)
