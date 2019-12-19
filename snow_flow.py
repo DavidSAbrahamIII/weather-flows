@@ -3,6 +3,7 @@ import pendulum
 import requests
 from prefect import task, Flow, Parameter
 from prefect.engine.signals import SKIP
+from prefect.environments.storage import Docker
 from prefect.tasks.notifications.slack_task import SlackTask
 from prefect.tasks.secrets import Secret
 
@@ -43,7 +44,9 @@ notification = SlackTask(
 )
 
 
-with Flow("Snow Flow") as flow:
+storage = Docker(registry_url="davidabrahamprefect", image_name="snow")
+
+with Flow("Snow Flow", storage=storage) as flow:
     forecast = pull_forecast(city=city, api_key=api_key)
     snow = is_snowing_this_week(forecast)
     notification.set_upstream(snow)
